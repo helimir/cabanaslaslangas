@@ -1,0 +1,20 @@
+# Normalización de finales de línea y archivos binarios
+* text=auto
+
+# Imágenes y documentos binarios
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.eot binary
+*.zip binary
+
+# Configuración local (nunca debe versionarse)
+.env -text

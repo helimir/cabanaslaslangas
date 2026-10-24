@@ -1,0 +1,43 @@
+# ============================================================
+# Cabañas Las Lengas - archivos que NO deben subirse al repositorio
+# ============================================================
+
+# Configuración con credenciales (cada entorno tiene la suya)
+.env
+.env.local
+.env.*.local
+
+# Logs / errores
+error_log
+*.log
+php_errors.log
+debug.log
+
+# Entorno de desarrollo / pruebas locales
+.dev/
+.dev*/
+.tmp/
+tmp/
+*.dmp
+
+# Carpetas de herramientas / editores
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Dependencias instaladas por herramientas (no aplica a las librerías del repo)
+node_modules/
+vendor-cache/
+
+# Respaldos y archivos temporales
+*.bak
+*.old
+*.orig
+*.swp
+*.zip
+*.rar
+*.7z

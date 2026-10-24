@@ -1,0 +1,32 @@
+# php -- BEGIN cPanel-generated handler, do not edit
+# This domain inherits the "PHP" package.
+# php -- END cPanel-generated handler, do not edit
+
+# ------------------------------------------------------------
+# Seguridad básica
+# ------------------------------------------------------------
+
+# Evitar el listado de directorios
+Options -Indexes
+
+# Bloquear archivos sensibles (configuración, logs, respaldos)
+<FilesMatch "^(\.env.*|error_log|.*\.log|.*\.sql|.*\.bak|.*\.old|composer\.(json|lock)|package(-lock)?\.json)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Bloquear carpetas de control de versiones / desarrollo
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule (^|/)\.git(/|$) - [F,L]
+    RewriteRule (^|/)\.dev(/|$) - [F,L]
+    RewriteRule (^|/)\.env - [F,L]
+</IfModule>
+
+# Codificación por defecto
+AddDefaultCharset UTF-8

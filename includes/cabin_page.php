@@ -217,13 +217,13 @@ $send = $_GET['send'] ?? '';
         </section>
 
         <!-- Equipamiento -->
-        <?php $amenities = getAmenities(); ?>
+        <?php $amenities = getCabinAmenities((int) $cabin['id']); ?>
         <?php if (!empty($amenities)): ?>
         <section id="menu" class="menu section-bg">
             <div class="container" data-aos="fade-up">
                 <div class="section-title">
                     <h2><?= $lang === 'es' ? 'Equipamiento' : 'Equipment' ?></h2>
-                    <p><?= $lang === 'es' ? 'Todas Incluyen' : 'All Include' ?></p>
+                    <p><?= $lang === 'es' ? 'Incluye esta cabaña' : 'Included in this cabin' ?></p>
                 </div>
 
                 <div class="row menu-container">

@@ -10,6 +10,7 @@
  */
 
 require_once __DIR__ . '/../../includes/env.php';
+require_once __DIR__ . '/../../includes/site_url.php';
 
 // Raíz del proyecto = dos niveles arriba de admin/includes
 dsh_env_load(dirname(__DIR__, 2) . '/.env');
@@ -48,8 +49,15 @@ define('DB_PASS', env('DB_PASS', ''));
 
 // ------------------------------------------------------------
 // Rutas y URLs
+// En desarrollo (APP_ENV=local) la URL se autodetecta desde la petición
+// para que las imágenes apunten al servidor local. En producción se usa
+// el valor de APP_URL definido en el .env.
 // ------------------------------------------------------------
-define('SITE_URL', rtrim(env('APP_URL', 'https://cabanaslaslengas.cl'), '/') . '/');
+if (APP_ENV === 'local' && PHP_SAPI !== 'cli') {
+    define('SITE_URL', detect_site_url(dirname(__DIR__, 2)));
+} else {
+    define('SITE_URL', rtrim(env('APP_URL', 'https://cabanaslaslengas.cl'), '/') . '/');
+}
 define('ADMIN_URL', SITE_URL . 'admin/');
 define('UPLOADS_URL', SITE_URL . 'admin/assets/uploads/');
 define('UPLOADS_PATH', __DIR__ . '/../assets/uploads/');
@@ -124,6 +132,111 @@ function getPendingReservationsCount()
         return (int) $stmt->fetchColumn();
     } catch (Exception $e) {
         return 0;
+    }
+}
+
+// ============================================================
+// EQUIPAMIENTO (amenities)
+// Cada cabaña puede tener un subconjunto del equipamiento general.
+// ============================================================
+
+/**
+ * Lista completa de equipamiento (por defecto incluye inactivos, útil en el admin).
+ */
+function getAllAmenities(bool $only_active = false): array
+{
+    global $pdo;
+
+    $sql = 'SELECT * FROM amenities';
+    if ($only_active) {
+        $sql .= ' WHERE status = 1';
+    }
+    $sql .= ' ORDER BY `order` ASC, id ASC';
+
+    try {
+        return $pdo->query($sql)->fetchAll();
+    } catch (Exception $e) {
+        return [];
+    }
+}
+
+/**
+ * IDs de equipamiento asignados a una cabaña (incluye inactivos).
+ */
+function getCabinAmenityIds(int $cabin_id): array
+{
+    global $pdo;
+
+    try {
+        $stmt = $pdo->prepare('SELECT amenity_id FROM cabin_amenities WHERE cabin_id = ?');
+        $stmt->execute([$cabin_id]);
+        return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+    } catch (Exception $e) {
+        error_log('getCabinAmenityIds: ' . $e->getMessage());
+        return [];
+    }
+}
+
+/**
+ * Equipamiento activo asignado a una cabaña (para la página pública).
+ * Si aún no existe la tabla de relación devuelve todo el equipamiento activo.
+ */
+function getCabinAmenities(int $cabin_id): array
+{
+    global $pdo;
+
+    try {
+        $stmt = $pdo->prepare(
+            'SELECT a.* FROM amenities a
+             INNER JOIN cabin_amenities ca ON ca.amenity_id = a.id
+             WHERE ca.cabin_id = ? AND a.status = 1
+             ORDER BY a.`order` ASC, a.id ASC'
+        );
+        $stmt->execute([$cabin_id]);
+        return $stmt->fetchAll();
+    } catch (Exception $e) {
+        error_log('getCabinAmenities: ' . $e->getMessage());
+        return getAllAmenities(true);
+    }
+}
+
+/**
+ * Reemplaza el equipamiento asignado a una cabaña.
+ */
+function saveCabinAmenities(int $cabin_id, array $amenity_ids): bool
+{
+    global $pdo;
+
+    $ids = [];
+    foreach ($amenity_ids as $id) {
+        if (is_numeric($id) && (int) $id > 0) {
+            $ids[] = (int) $id;
+        }
+    }
+    $ids = array_values(array_unique($ids));
+
+    try {
+        $pdo->prepare('DELETE FROM cabin_amenities WHERE cabin_id = ?')->execute([$cabin_id]);
+
+        if (!$ids) {
+            return true;
+        }
+
+        // Solo IDs que existan realmente.
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $pdo->prepare("SELECT id FROM amenities WHERE id IN ($placeholders)");
+        $stmt->execute($ids);
+        $valid = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+
+        $insert = $pdo->prepare('INSERT INTO cabin_amenities (cabin_id, amenity_id) VALUES (?, ?)');
+        foreach ($valid as $amenity_id) {
+            $insert->execute([$cabin_id, $amenity_id]);
+        }
+
+        return true;
+    } catch (Exception $e) {
+        error_log('saveCabinAmenities: ' . $e->getMessage());
+        return false;
     }
 }
 

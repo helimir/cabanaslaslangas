@@ -22,10 +22,24 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
             }
         }
 
+        // Borrar galería interna de la cabaña (category = slug)
+        $stmt = $pdo->prepare("SELECT image_path FROM gallery_images WHERE category = ?");
+        $stmt->execute([$cabin['slug']]);
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $gallery_image) {
+            if (!empty($gallery_image['image_path'])) {
+                $file = UPLOADS_PATH . basename($gallery_image['image_path']);
+                if (is_file($file)) {
+                    @unlink($file);
+                }
+            }
+        }
+        $stmt = $pdo->prepare("DELETE FROM gallery_images WHERE category = ?");
+        $stmt->execute([$cabin['slug']]);
+
         // Borrar archivo físico cabana-{slug}.php
         deleteCabinFile($cabin['slug']);
 
-        // Borrar de la BD
+        // Borrar de la BD (las relaciones de equipamiento se eliminan en cascada)
         $stmt = $pdo->prepare("DELETE FROM cabins WHERE id = ?");
         $stmt->execute([$id]);
     }
@@ -37,6 +51,20 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
 // Obtener todas las cabañas
 $stmt = $pdo->query("SELECT * FROM cabins ORDER BY id ASC");
 $cabins = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Equipamiento disponible para asignar a cada cabaña
+$all_amenities = getAllAmenities();
+
+// Cantidad de imágenes de galería por categoría (slug de cabaña)
+$gallery_counts = [];
+try {
+    $stmt = $pdo->query("SELECT category, COUNT(*) AS total FROM gallery_images GROUP BY category");
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $gallery_counts[$row['category']] = (int) $row['total'];
+    }
+} catch (Exception $e) {
+    $gallery_counts = [];
+}
 
 include 'includes/header.php';
 include 'includes/sidebar.php';
@@ -149,6 +177,15 @@ include 'includes/sidebar.php';
                                         </td>
                                         <td>
                                             <div class="btn-group btn-group-sm" role="group">
+                                                <a href="cabin_gallery.php?cabin=<?= $cabin['id'] ?>"
+                                                   class="btn btn-outline-success"
+                                                   title="Galería de imágenes de la cabaña">
+                                                    <i class="bi bi-images"></i>
+                                                    <?php $gcount = $gallery_counts[$cabin['slug']] ?? 0; ?>
+                                                    <?php if ($gcount > 0): ?>
+                                                        <span class="badge bg-success ms-1"><?= $gcount ?></span>
+                                                    <?php endif; ?>
+                                                </a>
                                                 <?php if (is_file(cabinFilePath($cabin['slug']))): ?>
                                                     <a href="<?= SITE_URL ?>cabana-<?= urlencode($cabin['slug']) ?>.php"
                                                        class="btn btn-outline-secondary"
@@ -165,7 +202,7 @@ include 'includes/sidebar.php';
                                                 </button>
                                                 <a href="?delete=<?= $cabin['id'] ?>" 
                                                    class="btn btn-outline-danger" 
-                                                   onclick="return confirm('¿Eliminar esta cabaña? Se eliminará también su archivo cabana-<?= htmlspecialchars($cabin['slug']) ?>.php y sus imágenes.')"
+                                                   onclick="return confirm('¿Eliminar esta cabaña? Se eliminará también su archivo cabana-<?= htmlspecialchars($cabin['slug']) ?>.php, sus imágenes de galería y sus fotos.')"
                                                    title="Eliminar">
                                                     <i class="bi bi-trash"></i>
                                                 </a>
@@ -247,6 +284,43 @@ include 'includes/sidebar.php';
                                 <textarea name="description_en" class="form-control" rows="3"></textarea>
                             </div>
                         </div>
+
+                        <!-- Equipamiento de esta cabaña -->
+                        <div class="col-12">
+                            <hr class="my-2">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="form-label mb-0">
+                                    <i class="bi bi-list-check me-1"></i> Equipamiento de esta cabaña
+                                </label>
+                                <a href="amenities.php" class="small" target="_blank">
+                                    Agregar / editar items <i class="bi bi-box-arrow-up-right"></i>
+                                </a>
+                            </div>
+                            <?php if (empty($all_amenities)): ?>
+                                <div class="alert alert-warning py-2 mb-0">
+                                    No hay items de equipamiento.
+                                    <a href="amenities.php">Crea el primero aquí</a>.
+                                </div>
+                            <?php else: ?>
+                                <input type="hidden" name="amenities_present" value="1">
+                                <div class="row g-2">
+                                    <?php foreach ($all_amenities as $amenity): ?>
+                                        <div class="col-md-4 col-6">
+                                            <div class="form-check border rounded p-2 ps-4">
+                                                <input class="form-check-input" type="checkbox"
+                                                       name="amenities[]" value="<?= (int) $amenity['id'] ?>"
+                                                       id="new_amenity_<?= (int) $amenity['id'] ?>" checked>
+                                                <label class="form-check-label small" for="new_amenity_<?= (int) $amenity['id'] ?>">
+                                                    <?= htmlspecialchars($amenity['name_es']) ?>
+                                                    <?php if (!$amenity['status']): ?><span class="text-muted">(inactivo)</span><?php endif; ?>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+
                         <!-- Imagen de Portada (para el index) -->
                         <div class="mb-3">
                             <label class="form-label">
@@ -272,7 +346,8 @@ include 'includes/sidebar.php';
                             <div class="alert alert-info py-2 mb-0">
                                 <i class="bi bi-info-circle me-2"></i>
                                 Al guardar se crea automáticamente la página pública
-                                <code>cabana-{slug}.php</code>, usando el mismo modelo informativo que las demás cabañas.
+                                <code>cabana-{slug}.php</code> y te llevará a subir las fotos
+                                de la galería (slider interno de la cabaña).
                             </div>
                         </div>
                     </div>
@@ -288,6 +363,7 @@ include 'includes/sidebar.php';
 
 <!-- Modales Editar para cada cabaña -->
 <?php foreach ($cabins as $cabin): ?>
+<?php $cabin_amenity_ids = getCabinAmenityIds((int) $cabin['id']); ?>
 <div class="modal fade" id="editCabinModal<?= $cabin['id'] ?>" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -351,6 +427,49 @@ include 'includes/sidebar.php';
                             <div class="mb-3">
                                 <label class="form-label">Descripción (EN)</label>
                                 <textarea name="description_en" class="form-control" rows="3"><?= htmlspecialchars($cabin['description_en']) ?></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Equipamiento de esta cabaña -->
+                        <div class="col-12">
+                            <hr class="my-2">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="form-label mb-0">
+                                    <i class="bi bi-list-check me-1"></i> Equipamiento de esta cabaña
+                                </label>
+                                <a href="amenities.php" class="small" target="_blank">
+                                    Agregar / editar items <i class="bi bi-box-arrow-up-right"></i>
+                                </a>
+                            </div>
+                            <?php if (empty($all_amenities)): ?>
+                                <div class="alert alert-warning py-2 mb-0">
+                                    No hay items de equipamiento.
+                                    <a href="amenities.php">Crea el primero aquí</a>.
+                                </div>
+                            <?php else: ?>
+                                <input type="hidden" name="amenities_present" value="1">
+                                <div class="row g-2">
+                                    <?php foreach ($all_amenities as $amenity): ?>
+                                        <?php $checked = in_array((int) $amenity['id'], $cabin_amenity_ids, true); ?>
+                                        <div class="col-md-4 col-6">
+                                            <div class="form-check border rounded p-2 ps-4">
+                                                <input class="form-check-input" type="checkbox"
+                                                       name="amenities[]" value="<?= (int) $amenity['id'] ?>"
+                                                       id="edit_amenity_<?= (int) $cabin['id'] ?>_<?= (int) $amenity['id'] ?>"
+                                                       <?= $checked ? 'checked' : '' ?>>
+                                                <label class="form-check-label small" for="edit_amenity_<?= (int) $cabin['id'] ?>_<?= (int) $amenity['id'] ?>">
+                                                    <?= htmlspecialchars($amenity['name_es']) ?>
+                                                    <?php if (!$amenity['status']): ?><span class="text-muted">(inactivo)</span><?php endif; ?>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
+                            <div class="mt-2">
+                                <a href="cabin_gallery.php?cabin=<?= (int) $cabin['id'] ?>" class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-images me-1"></i> Administrar galería de esta cabaña
+                                </a>
                             </div>
                         </div>
 

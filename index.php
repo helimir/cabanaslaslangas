@@ -710,8 +710,8 @@ $hero_btn_reservations = $lang == 'es' ? 'Reservaciones' : 'Reservations';
                 <div class="col-lg-12 pt-4 pt-lg-0 order-2 order-lg-1 content text-center">
                     <h3 style="font-family: arial;">
                         <?= $lang == 'es' 
-                            ? 'Todas cuentan en su interior con 1 Hot Tub y calefacción central, <br />lo que permite una agradable estadía en invierno y verano, con una vista mágica hacia<br /> el Ventisquero Balmaceda, Canal Señoret y ciudad de Puerto Natales.'
-                            : 'All have 1 Hot Hub inside and central heating, <br />which allows a pleasant stay in winter and summer, with a magical view towards<br /> the Ventisquero Balmaceda, Canal Señoret and the city of Port Natales.'
+                            ? 'Nuestras cabañas cuentan con calefacción central, <br />lo que permite una agradable estadía en invierno y verano, con una vista mágica hacia<br /> el Ventisquero Balmaceda, Canal Señoret y ciudad de Puerto Natales.<br /><span style="font-size:18px;">Cada cabaña detalla su propio equipamiento en su página.</span>'
+                            : 'Our cabins have central heating, <br />which allows a pleasant stay in winter and summer, with a magical view towards<br /> the Ventisquero Balmaceda, Canal Señoret and the city of Port Natales.<br /><span style="font-size:18px;">Each cabin lists its own equipment on its page.</span>'
                         ?>
                     </h3>
                 </div>

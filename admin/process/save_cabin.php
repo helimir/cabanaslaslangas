@@ -107,6 +107,10 @@ $bed_config_es   = trim($_POST['bed_config_es'] ?? '');
 $bed_config_en   = trim($_POST['bed_config_en'] ?? '');
 $status          = ((int) ($_POST['status'] ?? 1)) === 1 ? 1 : 0;
 
+// Equipamiento asignado a la cabaña (checkboxes del formulario)
+$amenity_ids       = isset($_POST['amenities']) && is_array($_POST['amenities']) ? $_POST['amenities'] : [];
+$amenities_present = isset($_POST['amenities_present']);
+
 $slug = normalizeCabinSlug($slug_input);
 
 // ============================================================
@@ -212,6 +216,11 @@ try {
             }
         }
 
+        // Equipamiento asignado a la cabaña.
+        if ($amenities_present) {
+            saveCabinAmenities($id, $amenity_ids);
+        }
+
         // --------------------------------------------
         // ARCHIVO FÍSICO DE LA CABAÑA
         // --------------------------------------------
@@ -263,6 +272,13 @@ try {
             $new_main, $new_cover ?? '', $status,
         ]);
 
+        $new_id = (int) $pdo->lastInsertId();
+
+        // Equipamiento asignado a la cabaña.
+        if ($amenities_present) {
+            saveCabinAmenities($new_id, $amenity_ids);
+        }
+
         // --------------------------------------------
         // ARCHIVO FÍSICO DE LA CABAÑA
         // --------------------------------------------
@@ -274,11 +290,13 @@ try {
             cabin_redirect('msg=added_no_file');
         }
 
+        // Ir directo a subir las fotos de la galería/slider interno.
+        $gallery_url = '../cabin_gallery.php?cabin=' . $new_id . '&created=1';
         if ($file_status === 'exists_custom') {
-            cabin_redirect('msg=added_file_exists');
+            $gallery_url .= '&custom=1';
         }
-
-        cabin_redirect('msg=added');
+        header('Location: ' . $gallery_url);
+        exit;
     }
 } catch (PDOException $e) {
     error_log('save_cabin: ' . $e->getMessage());

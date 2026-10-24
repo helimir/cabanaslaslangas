@@ -41,6 +41,14 @@ include 'includes/sidebar.php';
             <?php if (isset($_GET['msg']) && $_GET['msg'] == 'saved'): ?>
                 <div class="alert alert-success">Item guardado correctamente.</div>
             <?php endif; ?>
+            <div class="alert alert-info d-flex align-items-start">
+                <i class="bi bi-info-circle me-2 mt-1"></i>
+                <div>
+                    Estos items son el catálogo general de equipamiento. Para elegir cuáles tiene cada cabaña,
+                    entra a <a href="cabins.php" class="alert-link">Cabañas</a> → <strong>Editar</strong> y marca
+                    el equipamiento correspondiente.
+                </div>
+            </div>
         </div>
     </div>
 

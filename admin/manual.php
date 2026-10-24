@@ -277,8 +277,9 @@ include 'includes/sidebar.php';
                             
                             <h6 class="mt-3">⚡ Acciones disponibles:</h6>
                             <ul>
-                                <li><strong>Agregar nueva cabaña:</strong> Haz clic en "Nueva Cabaña". Al guardar se crea automáticamente la página pública.</li>
-                                <li><strong>Editar cabaña:</strong> Haz clic en <i class="bi bi-pencil text-primary"></i> de la cabaña</li>
+                                <li><strong>Agregar nueva cabaña:</strong> Haz clic en "Nueva Cabaña". Al guardar se crea la página pública y se abre la galería para subir las fotos del slider.</li>
+                                <li><strong>Editar cabaña:</strong> Haz clic en <i class="bi bi-pencil text-primary"></i>. Ahí también se marca el equipamiento de esa cabaña.</li>
+                                <li><strong>Galería de la cabaña:</strong> Haz clic en <i class="bi bi-images text-success"></i> para subir/eliminar las fotos del slider interno.</li>
                                 <li><strong>Ver página pública:</strong> Haz clic en <i class="bi bi-eye text-secondary"></i></li>
                                 <li><strong>Eliminar cabaña:</strong> Haz clic en <i class="bi bi-trash text-danger"></i> (¡cuidado!)</li>
                             </ul>
@@ -347,24 +348,20 @@ include 'includes/sidebar.php';
                                     </thead>
                                     <tbody>
                                         <tr>
-                                            <td><span class="badge bg-info">general</span></td>
+                                            <td><span class="badge bg-info">galeria</span></td>
                                             <td>Imágenes de la sección "Galería" en la página principal</td>
-                                        </tr>
-                                        <tr>
-                                            <td><span class="badge bg-success">coihue</span></td>
-                                            <td>Imágenes adicionales de la Cabaña Coihue</td>
-                                        </tr>
-                                        <tr>
-                                            <td><span class="badge bg-success">cipres</span></td>
-                                            <td>Imágenes adicionales de la Cabaña Cipres</td>
-                                        </tr>
-                                        <tr>
-                                            <td><span class="badge bg-success">lenga</span></td>
-                                            <td>Imágenes adicionales de la Cabaña Lenga</td>
                                         </tr>
                                         <tr>
                                             <td><span class="badge bg-warning">excursion</span></td>
                                             <td>Imágenes de la sección "Turismo"</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="badge bg-success">(cabañas)</span></td>
+                                            <td>
+                                                Las galerías de las cabañas se administran desde
+                                                <strong>Cabañas → botón <i class="bi bi-images"></i></strong>,
+                                                no desde esta pantalla.
+                                            </td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -376,6 +373,13 @@ include 'includes/sidebar.php';
                                 <li><strong>Editar imagen:</strong> Modifica título y categoría</li>
                                 <li><strong>Eliminar imagen:</strong> Elimina imágenes que ya no necesites</li>
                             </ul>
+
+                            <div class="alert alert-info mt-3">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>Galería de una cabaña:</strong> para las fotos del slider interno de una cabaña,
+                                entra a <strong>Cabañas</strong> y pulsa el botón <i class="bi bi-images"></i> de esa cabaña.
+                                También se abre automáticamente al crear una cabaña nueva.
+                            </div>
                             
                             <div class="alert alert-success mt-3">
                                 <i class="bi bi-lightbulb me-2"></i>
@@ -423,7 +427,7 @@ include 'includes/sidebar.php';
                     <div class="row">
                         <div class="col-md-8">
                             <h5><i class="bi bi-list-check me-2 text-primary"></i>¿Qué es?</h5>
-                            <p>Aquí gestionas los servicios y amenities que ofrecen todas las cabañas.</p>
+                            <p>Aquí gestionas el catálogo general de equipamiento y servicios. Luego, en cada cabaña, eliges cuáles de estos items tiene.</p>
                             
                             <h6 class="mt-3">📋 Campos de cada servicio:</h6>
                             <ul>
@@ -444,14 +448,17 @@ include 'includes/sidebar.php';
                             
                             <div class="alert alert-info mt-3">
                                 <i class="bi bi-info-circle me-2"></i>
-                                <strong>Nota:</strong> Los servicios se muestran en todas las cabañas.
+                                <strong>Importante:</strong> este catálogo es general. Para asignar qué equipamiento
+                                tiene cada cabaña, entra a <strong>Cabañas → Editar</strong> y marca los items
+                                correspondientes en la sección "Equipamiento de esta cabaña". La página pública de
+                                cada cabaña muestra solo lo que tenga asignado.
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="bg-light p-3 rounded-3">
                                 <div class="text-center">
                                     <i class="bi bi-list-check" style="font-size: 3rem; color: #f8c146;"></i>
-                                    <h6 class="mt-2">Servicios comunes</h6>
+                                    <h6 class="mt-2">Catálogo general</h6>
                                 </div>
                                 <div class="mt-2">
                                     <div class="d-flex align-items-center border-bottom py-1">

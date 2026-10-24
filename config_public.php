@@ -10,6 +10,7 @@
  */
 
 require_once __DIR__ . '/includes/env.php';
+require_once __DIR__ . '/includes/site_url.php';
 
 dsh_env_load(__DIR__ . '/.env');
 
@@ -45,8 +46,15 @@ define('DB_PASS', env('DB_PASS', ''));
 
 // ------------------------------------------------------------
 // Rutas y URLs
+// En desarrollo (APP_ENV=local) la URL se autodetecta desde la petición
+// para que las imágenes apunten al servidor local. En producción se usa
+// el valor de APP_URL definido en el .env.
 // ------------------------------------------------------------
-define('SITE_URL', rtrim(env('APP_URL', 'https://cabanaslaslengas.cl'), '/') . '/');
+if (APP_ENV === 'local' && PHP_SAPI !== 'cli') {
+    define('SITE_URL', detect_site_url(__DIR__));
+} else {
+    define('SITE_URL', rtrim(env('APP_URL', 'https://cabanaslaslengas.cl'), '/') . '/');
+}
 define('ADMIN_URL', SITE_URL . 'admin/');
 define('UPLOADS_URL', SITE_URL . 'admin/assets/uploads/');
 define('UPLOADS_PATH', __DIR__ . '/admin/assets/uploads/');
@@ -127,6 +135,29 @@ function getAmenities()
 
     $stmt = $pdo->query('SELECT * FROM amenities WHERE status = 1 ORDER BY `order` ASC');
     return $stmt->fetchAll();
+}
+
+/**
+ * Equipamiento activo asignado a una cabaña.
+ * Si aún no existe la tabla de relación devuelve todo el equipamiento activo.
+ */
+function getCabinAmenities(int $cabin_id): array
+{
+    global $pdo;
+
+    try {
+        $stmt = $pdo->prepare(
+            'SELECT a.* FROM amenities a
+             INNER JOIN cabin_amenities ca ON ca.amenity_id = a.id
+             WHERE ca.cabin_id = ? AND a.status = 1
+             ORDER BY a.`order` ASC, a.id ASC'
+        );
+        $stmt->execute([$cabin_id]);
+        return $stmt->fetchAll();
+    } catch (Exception $e) {
+        error_log('getCabinAmenities: ' . $e->getMessage());
+        return getAmenities();
+    }
 }
 
 function splitPipe($str)

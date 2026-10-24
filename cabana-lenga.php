@@ -32,7 +32,7 @@ $image_main = $cabin['image_main'] ? 'assets/img/' . $cabin['image_main'] : 'ass
 
 // Obtener imágenes de la galería para esta cabaña
 $gallery_images = getGalleryImagesByCategory($slug);
-$amenities = getAmenities();
+$amenities = getCabinAmenities((int) $cabin['id']);
 
 // Configurar el breadcrumb
 $breadcrumb_items = [

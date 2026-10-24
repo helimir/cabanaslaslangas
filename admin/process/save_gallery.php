@@ -82,8 +82,8 @@ try {
         }
         
         $stmt = $pdo->prepare("INSERT INTO gallery_images 
-            (caption_es, caption_en, category, image_path, `order`, status) 
-            VALUES (?, ?, ?, ?, ?, ?)");
+            (caption_es, caption_en, category, image_path, titulo, descripcion, `order`, status) 
+            VALUES (?, ?, ?, ?, '', '', ?, ?)");
         $stmt->execute([$caption_es, $caption_en, $category, $image_path, $order, $status]);
         
         header("Location: ../gallery.php?tab=" . urlencode($category) . "&msg=added");

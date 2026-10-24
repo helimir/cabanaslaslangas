@@ -46,7 +46,7 @@ Editar `.env` y completar:
 |---|---|
 | `APP_ENV` | `local` o `production` |
 | `APP_DEBUG` | `true` muestra errores en pantalla (solo desarrollo) |
-| `APP_URL` | URL pública CON barra final, ej. `https://cabanaslaslengas.cl/` |
+| `APP_URL` | URL pública CON barra final, ej. `https://cabanaslaslengas.cl/`. **Solo se usa en producción** |
 | `APP_TIMEZONE` | Zona horaria, por defecto `America/Santiago` |
 | `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASS` | Conexión a MySQL |
 | `MAIL_*` | SMTP para el envío de correos (PHPMailer) |
@@ -54,6 +54,9 @@ Editar `.env` y completar:
 | `RECAPTCHA_SECRET_KEY` | Clave secreta de Google reCAPTCHA |
 
 > **Importante:** en producción usar `APP_ENV=production` y `APP_DEBUG=false`.
+> En desarrollo (`APP_ENV=local`) la URL base se autodetecta desde el navegador
+> (incluye puerto y subcarpeta), así que no hace falta cambiar `APP_URL` para
+> probar en `http://localhost/cabanaslaslengas.cl/`.
 
 ### 3. Crear la base de datos
 
@@ -64,6 +67,12 @@ mysql -u USUARIO -p laslengas < database/schema.sql
 
 `database/schema.sql` contiene **solo la estructura** (sin datos). Los datos reales
 del sitio (cabañas, reservas, configuración) no se versionan por privacidad.
+
+Si actualizas una instalación existente, aplica las migraciones pendientes:
+
+```bash
+mysql -u USUARIO -p laslengas < database/migrations/2026-10-24_cabin_amenities.sql
+```
 
 ### 4. Crear el usuario administrador
 
@@ -100,21 +109,29 @@ php -S 127.0.0.1:8080 -t .
 
 Desde **Admin → Cabañas → Nueva Cabaña**:
 
-1. Se guarda la cabaña en la tabla `cabins`.
+1. Se guarda la cabaña en la tabla `cabins` y su equipamiento asignado.
 2. Se sube la **imagen de portada** (tarjeta del index) y la **imagen principal**
    (slider de la página de la cabaña). Si no hay portada se usa la principal.
 3. Se genera **automáticamente** el archivo físico `cabana-{slug}.php` en la raíz.
    Ese archivo carga el modelo informativo común `includes/cabin_page.php`.
-4. Todas las cabañas comparten el mismo modelo; el contenido (nombre, descripción,
-   precio, fotos, galería) se lee de la base de datos en tiempo real.
+4. Al guardar, el panel abre directamente la **galería de la cabaña** para subir las
+   fotos del slider interno (varias a la vez). También se accede con el botón
+   <kbd>Galería</kbd> de la fila de cada cabaña.
+5. Todas las cabañas comparten el mismo modelo; el contenido (nombre, descripción,
+   precio, fotos, galería, equipamiento) se lee de la base de datos en tiempo real.
 
-Notas:
+### Galería interna de cada cabaña
 
-- Si ya existe un archivo `cabana-{slug}.php` **hecho a mano** (las 3 cabañas
-  originales del sitio), no se sobreescribe; el panel avisa con una advertencia.
-- Al **cambiar el slug** de una cabaña se elimina el archivo anterior y se genera el nuevo.
-- Al **eliminar** una cabaña se borran también su archivo físico y sus imágenes.
-- La galería de cada cabaña usa como categoría su `slug` (Admin → Galería).
+- Se administra desde **Cabañas → botón Galería** (`admin/cabin_gallery.php?cabin=ID`).
+- Las imágenes se guardan en `gallery_images` con `category = slug` de la cabaña.
+- La pantalla **Galería** del menú queda solo para galería general y excursiones.
+
+### Equipamiento configurable por cabaña
+
+- **Equipamiento** del menú es el catálogo general de items (se pueden crear, editar y borrar).
+- En **Cabañas → Editar** se marca qué items tiene cada cabaña.
+- La página pública muestra **solo el equipamiento asignado** a esa cabaña.
+- Tabla de relación: `cabin_amenities` (ver `database/migrations/`).
 
 ### Grilla de "Nuestras Cabañas" en el index
 
@@ -145,14 +162,17 @@ Las filas incompletas se centran para que no quede una tarjeta aislada a la izqu
 ├── config_public.php          Configuración para páginas públicas
 ├── includes/
 │   ├── env.php                Cargador de variables .env
+│   ├── site_url.php           URL base (autodetección en desarrollo)
 │   ├── cabin_page.php         Modelo informativo común de cabaña
 │   └── cabin_grid.php         Cálculo de la grilla de cabañas
 ├── admin/                     Panel de administración
 │   ├── includes/config.php    Configuración central + helpers de cabañas
+│   ├── cabin_gallery.php      Galería interna (slider) de cada cabaña
 │   ├── process/               Controladores (guardar cabaña, galería, etc.)
 │   └── assets/uploads/        Imágenes subidas
 ├── assets/                    CSS, JS, imágenes y librerías del sitio
 ├── database/schema.sql        Estructura de la base de datos (sin datos)
+├── database/migrations/       Migraciones para instalaciones existentes
 ├── forms/                     Procesamiento de formularios de contacto/reserva
 ├── PHPMailer/                 Librería de correo
 └── .env.example               Ejemplo de configuración (el .env real no se versiona)

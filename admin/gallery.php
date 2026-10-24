@@ -98,6 +98,30 @@ $category_info = [
 $stmt = $pdo->query("SELECT * FROM gallery_images ORDER BY category, `order` ASC, id ASC");
 $all_images = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// ============================================================
+// LAS GALERÍAS DE CABAÑAS SE ADMINISTRAN DESDE admin/cabin_gallery.php
+// (Cabañas → botón Galería). Aquí solo se muestran galería general,
+// excursiones y otras categorías del sitio.
+// ============================================================
+$cabin_slugs = [];
+try {
+    $cabin_slugs = $pdo->query("SELECT slug FROM cabins")->fetchAll(PDO::FETCH_COLUMN);
+} catch (Exception $e) {
+    $cabin_slugs = [];
+}
+$cabin_slug_map = array_flip(array_map('strval', $cabin_slugs));
+
+$cabin_gallery_total = 0;
+$site_images = [];
+foreach ($all_images as $image) {
+    if (isset($cabin_slug_map[(string) $image['category']])) {
+        $cabin_gallery_total++;
+        continue;
+    }
+    $site_images[] = $image;
+}
+$all_images = $site_images;
+
 // Agrupar por categoría
 $images_by_category = [];
 foreach ($all_images as $image) {
@@ -193,6 +217,11 @@ $known_categories = [
 $stmt = $pdo->query("SELECT DISTINCT category, COUNT(*) as count FROM gallery_images GROUP BY category ORDER BY count DESC");
 $db_categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Excluir las categorías que corresponden a cabañas
+$db_categories = array_values(array_filter($db_categories, function ($row) use ($cabin_slug_map) {
+    return !isset($cabin_slug_map[(string) $row['category']]);
+}));
+
 // Construir el array final de categorías
 $category_info = [];
 foreach ($db_categories as $row) {
@@ -213,27 +242,6 @@ foreach ($db_categories as $row) {
     }
 }
 
-
-// ============================================================
-// AGREGAR LAS CABAÑAS ACTIVAS COMO CATEGORÍAS DISPONIBLES
-// (así se puede subir la galería de una cabaña nueva aunque
-//  todavía no tenga imágenes)
-// ============================================================
-$stmt = $pdo->query("SELECT name_es, name_en, slug FROM cabins WHERE status = 1 ORDER BY id ASC");
-foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $cabin_row) {
-    $cat = $cabin_row['slug'];
-    if (!isset($category_info[$cat])) {
-        $category_info[$cat] = [
-            'name_es' => $cabin_row['name_es'],
-            'name_en' => $cabin_row['name_en'],
-            'icon' => 'bi-house-door',
-            'color' => 'success',
-            'description_es' => 'Galería de ' . $cabin_row['name_es'],
-            'description_en' => $cabin_row['name_en'] . ' gallery',
-            'where_used' => 'cabana-' . $cat . '.php'
-        ];
-    }
-}
 
 // Categoría de respaldo para evitar avisos
 if (!isset($category_info['general'])) {
@@ -619,6 +627,18 @@ include 'includes/sidebar.php';
                     </div>
                 <?php endif; ?>
             <?php endif; ?>
+
+            <div class="alert alert-info d-flex align-items-start">
+                <i class="bi bi-info-circle me-2 mt-1"></i>
+                <div>
+                    Las galerías internas de las cabañas (las fotos del slider de cada cabaña) se administran
+                    desde <a href="cabins.php" class="alert-link">Cabañas</a> → botón
+                    <i class="bi bi-images"></i> <strong>Galería</strong> de cada cabaña.
+                    <?php if ($cabin_gallery_total > 0): ?>
+                        <span class="text-muted">(<?= $cabin_gallery_total ?> imágenes de cabañas no se listan aquí)</span>
+                    <?php endif; ?>
+                </div>
+            </div>
         </div>
     </div>
 

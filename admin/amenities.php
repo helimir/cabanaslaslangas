@@ -139,6 +139,7 @@ include 'includes/sidebar.php';
                             <div class="mb-3">
                                 <label class="form-label">Imagen</label>
                                 <input type="file" name="image" class="form-control" accept="image/*">
+                                <small class="text-muted"><?= htmlspecialchars(image_size_text('amenity')) ?>. <?= htmlspecialchars(image_max_size_text()) ?></small>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Orden</label>
@@ -204,6 +205,7 @@ include 'includes/sidebar.php';
                             <div class="mb-3">
                                 <label class="form-label">Imagen</label>
                                 <input type="file" name="image" class="form-control" accept="image/*">
+                                <small class="text-muted"><?= htmlspecialchars(image_size_text('amenity')) ?>. <?= htmlspecialchars(image_max_size_text()) ?></small>
                                 <?php if ($item['image_path']): ?>
                                     <small class="text-muted">Imagen actual: <?= $item['image_path'] ?></small>
                                 <?php endif; ?>

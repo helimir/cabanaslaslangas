@@ -11,6 +11,7 @@
 
 require_once __DIR__ . '/../../includes/env.php';
 require_once __DIR__ . '/../../includes/site_url.php';
+require_once __DIR__ . '/image_sizes.php';
 
 // Raíz del proyecto = dos niveles arriba de admin/includes
 dsh_env_load(dirname(__DIR__, 2) . '/.env');

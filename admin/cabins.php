@@ -329,6 +329,7 @@ include 'includes/sidebar.php';
                             </label>
                             <input type="file" name="image_path" class="form-control" accept="image/*">
                             <small class="text-muted d-block mt-1">
+                                <?= htmlspecialchars(image_size_text('cabin_cover')) ?>.
                                 Si no subes portada, se usará la Imagen Principal.
                             </small>
                         </div>
@@ -340,6 +341,9 @@ include 'includes/sidebar.php';
                                 <small class="text-muted">(Para el slider de la cabaña)</small>
                             </label>
                             <input type="file" name="image_main" class="form-control" accept="image/*">
+                            <small class="text-muted d-block mt-1">
+                                <?= htmlspecialchars(image_size_text('cabin_main')) ?>.
+                            </small>
                         </div>
 
                         <div class="col-12">
@@ -480,6 +484,9 @@ include 'includes/sidebar.php';
                                 <small class="text-muted">(Se muestra en el index)</small>
                             </label>
                             <input type="file" name="image_path" class="form-control" accept="image/*">
+                            <small class="text-muted d-block mt-1">
+                                <?= htmlspecialchars(image_size_text('cabin_cover')) ?>.
+                            </small>
                             <?php if (!empty($cabin['image_path'])): ?>
                                 <small class="text-muted d-block mt-1">
                                     Actual: <code><?= htmlspecialchars($cabin['image_path']) ?></code>
@@ -494,6 +501,9 @@ include 'includes/sidebar.php';
                                 <small class="text-muted">(Para el slider de la cabaña)</small>
                             </label>
                             <input type="file" name="image_main" class="form-control" accept="image/*">
+                            <small class="text-muted d-block mt-1">
+                                <?= htmlspecialchars(image_size_text('cabin_main')) ?>.
+                            </small>
                             <?php if (!empty($cabin['image_main'])): ?>
                                 <small class="text-muted d-block mt-1">
                                     Actual: <code><?= htmlspecialchars($cabin['image_main']) ?></code>

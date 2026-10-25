@@ -90,7 +90,15 @@ $send = $_GET['send'] ?? '';
     .my-float { margin-top:14px; }
     .my-float2 { margin-top:14px; }
     .my-float3 { margin-top:14px; }
-    .cabin-hero-img { width: 100%; height: auto; border-radius: 10px; }
+    /* Las imágenes del slider se recortan a 16:9 para que todas se vean iguales */
+    .cabin-hero-img {
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        object-fit: cover;
+        object-position: center;
+        border-radius: 10px;
+        display: block;
+    }
     </style>
 </head>
 

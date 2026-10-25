@@ -759,7 +759,7 @@ $hero_btn_reservations = $lang == 'es' ? 'Reservaciones' : 'Reservations';
                     <?php foreach ($cabins as $cabin): ?>
                         <div class="<?= $cabin_col_class ?>">
                             <div class="member" data-aos="zoom-in" data-aos-delay="100">
-                                <img src="<?= htmlspecialchars(getCabinCover($cabin)) ?>" class="img-fluid" alt="<?= htmlspecialchars($lang == 'es' ? $cabin['name_es'] : $cabin['name_en']) ?>">
+                                <img src="<?= htmlspecialchars(getCabinCover($cabin)) ?>" class="img-fluid cabin-card-img" alt="<?= htmlspecialchars($lang == 'es' ? $cabin['name_es'] : $cabin['name_en']) ?>">
                                 <div class="member-info">
                                     <div class="member-info-content">
                                         <h4><?= htmlspecialchars($lang == 'es' ? $cabin['name_es'] : $cabin['name_en']) ?></h4>

@@ -808,8 +808,9 @@ MODAL AGREGAR IMAGEN
                                 </label>
                                 <input type="file" name="image" class="form-control" accept="image/*" required>
                                 <small class="text-muted">
-                                    Formatos: JPG, PNG, WEBP (Máx. 5MB)<br>
-                                    Recomendado: 1920x1080px
+                                    Formatos: JPG, PNG, WEBP. <?= htmlspecialchars(image_max_size_text()) ?><br>
+                                    <strong>Galería general:</strong> <?= htmlspecialchars(image_size_text('site_gallery')) ?>.<br>
+                                    <strong>Turismo / excursiones:</strong> <?= htmlspecialchars(image_size_text('excursion')) ?>.
                                 </small>
                             </div>
                         </div>

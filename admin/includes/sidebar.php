@@ -43,7 +43,7 @@
         </li>
         <li class="nav-item mt-4 pt-3 border-top border-secondary">
             <a class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'manual.php' ? 'active' : '' ?>" href="manual.php">
-                <i class="bi bi-book me-2"></i> <span class="nav-text">Manual</span>
+                <i class="bi bi-life-preserver me-2"></i> <span class="nav-text">Centro de Ayuda</span>
             </a>
         </li>
         <li class="nav-item">

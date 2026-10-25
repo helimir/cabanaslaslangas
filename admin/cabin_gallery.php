@@ -134,7 +134,9 @@ include 'includes/sidebar.php';
                                     <label class="form-label">Fotos del slider interno *</label>
                                     <input type="file" name="images[]" class="form-control" accept="image/*" multiple required>
                                     <small class="text-muted d-block mt-1">
-                                        Puedes seleccionar varias a la vez. Formatos: JPG, PNG, GIF, WEBP. Máx. 5 MB por imagen.
+                                        Puedes seleccionar varias a la vez.<br>
+                                        <strong>Tamaño recomendado:</strong> <?= htmlspecialchars(image_size_text('cabin_gallery')) ?>.<br>
+                                        Formatos: JPG, PNG, GIF, WEBP. <?= htmlspecialchars(image_max_size_text()) ?>
                                     </small>
                                 </div>
                                 <button type="submit" class="btn btn-primary w-100">

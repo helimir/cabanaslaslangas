@@ -1648,3 +1648,32 @@ section {
 .portfolio-details .portfolio-description p {
   padding: 0;
 }
+
+/*--------------------------------------------------------------
+# Imágenes de cabañas (ajuste uniforme)
+--------------------------------------------------------------*/
+.chefs .member img.cabin-card-img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.cabin-hero-img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 10px;
+  display: block;
+}
+
+.cabin-gallery-thumb {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 8px;
+  display: block;
+}

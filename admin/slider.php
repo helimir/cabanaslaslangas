@@ -339,8 +339,8 @@ MODAL AGREGAR NUEVO SLIDE
                                 </label>
                                 <input type="file" name="image" class="form-control" accept="image/*" required>
                                 <small class="text-muted">
-                                    Formatos: JPG, PNG, WEBP<br>
-                                    Tamaño recomendado: 1920x1080px
+                                    Formatos: JPG, PNG, WEBP. <?= htmlspecialchars(image_max_size_text()) ?><br>
+                                    <strong>Tamaño recomendado:</strong> <?= htmlspecialchars(image_size_text('slider')) ?>.
                                 </small>
                             </div>
                         </div>

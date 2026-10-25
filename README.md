@@ -133,6 +133,22 @@ Desde **Admin → Cabañas → Nueva Cabaña**:
 - La página pública muestra **solo el equipamiento asignado** a esa cabaña.
 - Tabla de relación: `cabin_amenities` (ver `database/migrations/`).
 
+### Centro de Ayuda
+
+El manual del panel (`admin/manual.php`, menú **Centro de Ayuda**) es una guía completa con:
+
+- Buscador interno y accesos rápidos por sección.
+- Primeros pasos, y documentación de Dashboard, Cabañas, Galería, Equipamiento,
+  Reservas, Configuración, Documentos, Usuarios y Perfil.
+- Tabla de **tamaños de imagen recomendados** por sección.
+- Preguntas frecuentes y solución de problemas.
+
+Los tamaños recomendados se definen una sola vez en
+`admin/includes/image_sizes.php` y se muestran tanto en los formularios del panel
+(junto a cada campo de subida) como en el Centro de Ayuda. Las portadas de cabaña
+se recortan a 4:3 y las imágenes del slider/galería de cabaña a 16:9
+(`object-fit: cover`), por lo que una foto con otra proporción no rompe el diseño.
+
 ### Grilla de "Nuestras Cabañas" en el index
 
 La cantidad de tarjetas por fila se adapta automáticamente (`includes/cabin_grid.php`):

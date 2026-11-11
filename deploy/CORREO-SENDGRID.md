@@ -72,6 +72,10 @@ php tools/test_mail.php correo@destino.cl
 Después de una reserva real, si el correo falla, el número de reserva y el error
 quedan en el log de PHP. La reserva **igual se guarda** en la base de datos.
 
+El correo de confirmación al cliente se envía con `Reply-To` del negocio; la
+notificación al administrador usa como `Reply-To` el correo del cliente, para
+que puedas responderle directamente desde tu bandeja de entrada.
+
 ---
 
 ## 5. Alternativa: SMTP de SendGrid

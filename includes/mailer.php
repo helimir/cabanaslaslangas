@@ -94,7 +94,8 @@ if (!function_exists('site_mail_config')) {
         ?string $alt_text,
         ?string &$error,
         bool $debug,
-        array $config
+        array $config,
+        ?string $reply_to = null
     ): bool {
         $error = null;
 
@@ -110,6 +111,10 @@ if (!function_exists('site_mail_config')) {
             return false;
         }
 
+        $reply_email = ($reply_to !== null && filter_var($reply_to, FILTER_VALIDATE_EMAIL))
+            ? $reply_to
+            : $config['from_address'];
+
         $payload = [
             'personalizations' => [
                 [
@@ -122,10 +127,9 @@ if (!function_exists('site_mail_config')) {
                 'email' => $config['from_address'],
                 'name'  => $config['from_name'],
             ],
-            'reply_to' => [
-                'email' => $config['from_address'],
-                'name'  => $config['from_name'],
-            ],
+            'reply_to' => ($reply_email === $config['from_address'])
+                ? ['email' => $reply_email, 'name' => $config['from_name']]
+                : ['email' => $reply_email],
             'subject' => $subject,
             'content' => [
                 [
@@ -219,6 +223,7 @@ if (!function_exists('site_mail_config')) {
      * @param string|null $alt_text Texto alternativo (opcional)
      * @param string|null $error    Se completa con el error si falla
      * @param bool        $debug    Muestra la conversación SMTP (solo CLI/pruebas)
+     * @param string|null $reply_to Correo para "Responder a" (ej: email del cliente)
      */
     function send_site_mail(
         string $to,
@@ -226,7 +231,8 @@ if (!function_exists('site_mail_config')) {
         string $html,
         ?string $alt_text = null,
         ?string &$error = null,
-        bool $debug = false
+        bool $debug = false,
+        ?string $reply_to = null
     ): bool {
         $error = null;
         $config = site_mail_config();
@@ -248,7 +254,8 @@ if (!function_exists('site_mail_config')) {
                 ($alt_text !== null && $alt_text !== '') ? $alt_text : null,
                 $error,
                 $debug,
-                $config
+                $config,
+                $reply_to
             );
         }
 
@@ -256,8 +263,12 @@ if (!function_exists('site_mail_config')) {
         // Modo mail() (solo si se configura MAIL_DRIVER=mail)
         // ------------------------------------------------------------
         if ($config['driver'] === 'mail') {
+            $reply_address = ($reply_to !== null && filter_var($reply_to, FILTER_VALIDATE_EMAIL))
+                ? $reply_to
+                : $config['from_address'];
+
             $headers = 'From: ' . $config['from_name'] . ' <' . $config['from_address'] . ">\r\n";
-            $headers .= 'Reply-To: ' . $config['from_address'] . "\r\n";
+            $headers .= 'Reply-To: ' . $reply_address . "\r\n";
             $headers .= "MIME-Version: 1.0\r\n";
             $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
 
@@ -313,7 +324,13 @@ if (!function_exists('site_mail_config')) {
             }
 
             $mail->setFrom($config['from_address'], $config['from_name']);
-            $mail->addReplyTo($config['from_address'], $config['from_name']);
+
+            if ($reply_to !== null && filter_var($reply_to, FILTER_VALIDATE_EMAIL)) {
+                $mail->addReplyTo($reply_to);
+            } else {
+                $mail->addReplyTo($config['from_address'], $config['from_name']);
+            }
+
             $mail->addAddress($to);
 
             $mail->isHTML(true);

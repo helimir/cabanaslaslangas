@@ -14,6 +14,7 @@ $check_in = $_POST['date1'] ?? '';
 $check_out = $_POST['date2'] ?? '';
 $message = trim($_POST['message'] ?? '');
 $lang = $_POST['lang'] ?? 'es'; // <-- RECIBIR EL IDIOMA
+$lang = in_array($lang, ['es', 'en'], true) ? $lang : 'es';
 
 // ============================================================
 // OBTENER NOMBRE DE LA CABAÑA (desde la base de datos)
@@ -73,22 +74,37 @@ try {
     
     // ============================================================
     // ENVIAR EMAIL AL CLIENTE (EN EL IDIOMA SELECCIONADO)
+    // y NOTIFICACIÓN AL ADMIN
+    // El envío real lo resuelve includes/mailer.php según el .env:
+    //   MAIL_DRIVER=sendgrid  -> API HTTPS de SendGrid (recomendado en VPS)
+    //   MAIL_DRIVER=smtp      -> SMTP
     // ============================================================
-    if ($lang == 'en') {
-        $client_subject = 'Reservation Confirmation - Cabañas Las Lengas';
-        $client_body = getConfirmationEmailClientEn($data);
-    } else {
-        $client_subject = 'Confirmación de Reserva - Cabañas Las Lengas';
-        $client_body = getConfirmationEmailClientEs($data);
+    $client_mail_ok = false;
+    $admin_mail_ok = false;
+
+    try {
+        if ($lang === 'en') {
+            $client_subject = 'Reservation Confirmation - Cabañas Las Lengas';
+            $client_body = getConfirmationEmailClientEn($data);
+        } else {
+            $client_subject = 'Confirmación de Reserva - Cabañas Las Lengas';
+            $client_body = getConfirmationEmailClientEs($data);
+        }
+
+        // Confirmación al cliente (responder va al correo del negocio).
+        $client_mail_ok = sendEmail($email, $client_subject, $client_body);
+
+        // Notificación al admin: "Responder a" = correo del cliente.
+        $admin_subject = 'Nueva Reserva - Cabañas Las Lengas';
+        $admin_body = getNotificationEmailAdmin($data);
+        $admin_address = env('MAIL_ADMIN_ADDRESS', 'reservaciones@cabanaslaslengas.cl');
+        $admin_mail_ok = sendEmail($admin_address, $admin_subject, $admin_body, true, $email);
+    } catch (Throwable $mail_exception) {
+        error_log(
+            'Reserva #' . $reservation_id . ': error inesperado al enviar correos: ' .
+            $mail_exception->getMessage()
+        );
     }
-    $client_mail_ok = sendEmail($email, $client_subject, $client_body);
-    
-    // ============================================================
-    // ENVIAR EMAIL AL ADMIN (SIEMPRE EN ESPAÑOL)
-    // ============================================================
-    $admin_subject = 'Nueva Reserva - Cabañas Las Lengas';
-    $admin_body = getNotificationEmailAdmin($data);
-    $admin_mail_ok = sendEmail(env('MAIL_ADMIN_ADDRESS', 'reservaciones@cabanaslaslengas.cl'), $admin_subject, $admin_body);
 
     if (!$client_mail_ok || !$admin_mail_ok) {
         error_log(
@@ -108,11 +124,19 @@ try {
 }
 
 // ============================================================
-// FUNCIÓN PARA ENVIAR EMAIL (PHPMailer + SMTP del .env)
+// FUNCIÓN PARA ENVIAR EMAIL (PHPMailer: SendGrid API o SMTP del .env)
 // ============================================================
-function sendEmail($to, $subject, $body, $isHTML = true) {
+function sendEmail($to, $subject, $body, $isHTML = true, $reply_to = null) {
     $error = null;
-    $ok = send_site_mail((string) $to, (string) $subject, (string) $body, null, $error);
+    $ok = send_site_mail(
+        (string) $to,
+        (string) $subject,
+        (string) $body,
+        null,
+        $error,
+        false,
+        $reply_to !== null ? (string) $reply_to : null
+    );
 
     if (!$ok) {
         error_log('No se pudo enviar correo a ' . $to . ': ' . ($error ?: 'error desconocido'));

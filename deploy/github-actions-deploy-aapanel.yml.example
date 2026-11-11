@@ -1,0 +1,49 @@
+# ============================================================================
+# EJEMPLO de auto-deploy con GitHub Actions para servidor con aaPanel
+# ----------------------------------------------------------------------------
+# Para activarlo:
+#   1. Copiar este archivo a: .github/workflows/deploy.yml
+#   2. Crear estos Secrets en GitHub (Settings → Secrets and variables → Actions):
+#        SSH_HOST  = IP o dominio del VPS
+#        SSH_USER  = root (o usuario con sudo; aaPanel suele usar root)
+#        SSH_KEY   = llave privada SSH del servidor
+#        SSH_PORT  = 22 (opcional)
+#   3. Ajustar RUTA y PHPVER si es necesario.
+#
+# Cada push a main hace git pull en /www/wwwroot/cabanaslaslengas.cl
+# ============================================================================
+
+name: Deploy aaPanel
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy por SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            set -e
+            cd /www/wwwroot/cabanaslaslengas.cl
+            git config --global --add safe.directory /www/wwwroot/cabanaslaslengas.cl
+            git pull --ff-only origin main
+
+            # Migraciones nuevas (ejecutar manualmente cuando corresponda):
+            # mysql -u laslengas -p laslengas < database/migrations/ARCHIVO.sql
+
+            # Normalizar permisos para PHP-FPM (usuario www en aaPanel)
+            chown -R www:www /www/wwwroot/cabanaslaslengas.cl
+            chmod 640 /www/wwwroot/cabanaslaslengas.cl/.env
+
+            # Nginx y PHP-FPM no necesitan reinicio por cambios de PHP/CSS.
+            # Si se modificó la config de Nginx, recargar:
+            # /www/server/nginx/sbin/nginx -t && systemctl reload nginx

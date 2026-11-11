@@ -225,6 +225,17 @@ CSS/caché y respaldos está en **[deploy/DEPLOY.md](deploy/DEPLOY.md)**.
 - Ajustes PHP-FPM: `deploy/php-fpm/99-cabanas.ini.example`
 - Auto-deploy opcional: `deploy/github-actions-deploy.yml.example`
 
+### Si usas aaPanel
+
+- Guía específica: **[deploy/DEPLOY-AAPANEL.md](deploy/DEPLOY-AAPANEL.md)**
+- Directivas para pegar en el vhost desde el panel:
+  `deploy/aapanel/nginx-snippets.conf.example`
+- Auto-deploy aaPanel: `deploy/github-actions-deploy-aapanel.yml.example`
+
+En aaPanel el sitio vive en `/www/wwwroot/<dominio>`, PHP-FPM corre como usuario
+`www` y la configuración se edita en **Website → Settings → Config file**
+(no se reemplaza el archivo completo).
+
 > Nginx no lee `.htaccess`; las protecciones de `.env`, `.git`, logs y `.sql`
 > se aplican en la configuración de Nginx incluida.
 

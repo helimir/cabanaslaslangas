@@ -1,0 +1,78 @@
+# ============================================================================
+# Cabañas Las Lengas — Snippets Nginx para aaPanel
+# ----------------------------------------------------------------------------
+# NO reemplazar el archivo de configuración completo del sitio.
+#
+# En aaPanel:
+#   Sitio web -> tu dominio -> Configuración -> Configuración de Nginx
+#   (Website -> Settings -> Config file / "配置文件")
+#
+# Pegar estos bloques DENTRO del bloque `server { ... }` existente,
+# preferentemente antes del bloque que procesa PHP (`include enable-php-XX.conf;`).
+#
+# Después: guardar y recargar Nginx (el panel suele recargar solo).
+# Verificar por terminal:  /www/server/nginx/sbin/nginx -t
+#
+# Si aaPanel ya tiene un bloque `location / { ... }`, NO dupliques el de
+# "Front controller": deja el existente.
+# ============================================================================
+
+    # ------------------------------------------------------------------
+    # Subidas: la galería de cabañas permite varias fotos de hasta 5 MB
+    # ------------------------------------------------------------------
+    client_max_body_size 60m;
+
+    # ------------------------------------------------------------------
+    # Equivalente a .htaccess: bloquear archivos y carpetas sensibles
+    # (.env, .git, logs, .sql, respaldos, deploy, database, includes)
+    # ------------------------------------------------------------------
+    location ~ /\.(?!well-known) {
+        return 404;
+        access_log off;
+        log_not_found off;
+    }
+
+    location ~* ^/(error_log|.*\.log|.*\.sql|.*\.bak|.*\.old|.*\.orig|.*\.dmp|composer\.(json|lock)|package(-lock)?\.json)$ {
+        return 404;
+        access_log off;
+        log_not_found off;
+    }
+
+    location ^~ /deploy/     { return 404; }
+    location ^~ /database/   { return 404; }
+    location ^~ /includes/   { return 404; }
+    location ^~ /.git/       { return 404; }
+    location ^~ /.dev/       { return 404; }
+
+    # ------------------------------------------------------------------
+    # Nunca ejecutar PHP desde las carpetas de imágenes subidas
+    # ------------------------------------------------------------------
+    location ~* ^/admin/(assets/uploads|uploads)/.*\.(php|phtml|phar|php[0-9])$ {
+        return 404;
+    }
+
+    # ------------------------------------------------------------------
+    # Front controller (SOLO si el sitio no tiene ya un location / con
+    # try_files; si existe, omitir este bloque)
+    # ------------------------------------------------------------------
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+# ============================================================================
+# Opcional: caché de estáticos.
+# aaPanel normalmente YA tiene un bloque de caché para imágenes/CSS/JS.
+# Si no lo tiene, puede agregarse:
+#
+#    location ~* \.(jpg|jpeg|png|gif|webp|svg|ico|woff2?|ttf|otf|eot)$ {
+#        expires 30d;
+#        add_header Cache-Control "public";
+#        access_log off;
+#        try_files $uri =404;
+#    }
+#    location ~* \.(css|js)$ {
+#        expires 7d;
+#        access_log off;
+#        try_files $uri =404;
+#    }
+# ============================================================================

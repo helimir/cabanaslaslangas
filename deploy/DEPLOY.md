@@ -1,5 +1,9 @@
 # Despliegue en VPS (Hetzner / Ubuntu + Nginx + PHP-FPM)
 
+> **¿Usas aaPanel?** Esta guía es para Ubuntu/Nginx "puro". Para servidores
+> administrados con aaPanel (rutas `/www/wwwroot`, usuario `www`, vhost editado
+> desde el panel) usa **[DEPLOY-AAPANEL.md](DEPLOY-AAPANEL.md)**.
+
 Guía para publicar **Cabañas Las Lengas** en un VPS con Nginx, conectar el
 repositorio de GitHub con el servidor y actualizar el sitio de forma segura.
 

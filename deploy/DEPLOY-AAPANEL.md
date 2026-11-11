@@ -148,6 +148,46 @@ RECAPTCHA_SECRET_KEY=
 
 ---
 
+## 4.1 Correo SMTP (importante en VPS)
+
+El formulario de reservas envía correos **por SMTP** (PHPMailer) usando las
+variables `MAIL_*` del `.env`. En un VPS:
+
+- No hay servidor de correo local: la función `mail()` de PHP no sirve.
+- **Hetzner bloquea el puerto 25** por defecto → usar **587 (tls)** o **465 (ssl)**.
+- El remitente (`MAIL_FROM_ADDRESS`) debe pertenecer al dominio autenticado.
+
+Probar desde la raíz del proyecto (Terminal de aaPanel/SSH):
+
+```bash
+cd /www/wwwroot/cabanaslaslengas.cl
+php tools/test_mail.php correo@destino.cl
+```
+
+Muestra la conversación SMTP completa y el error exacto. Si falla:
+
+```bash
+# Conectividad al servidor de correo
+openssl s_client -connect mail.cabanaslaslengas.cl:587 -starttls smtp -crlf
+nc -vz mail.cabanaslaslengas.cl 587
+nc -vz mail.cabanaslaslengas.cl 465
+
+# Logs de PHP (errores de correo)
+tail -n 100 /www/server/php/83/var/log/php-fpm.log
+```
+
+Errores típicos: credenciales incorrectas, puerto/cifrado equivocado
+(587=tls, 465=ssl), host mal escrito o salida bloqueada. Revisar también SPAM y
+SPF/DKIM del dominio. Alternativa: usar un proveedor transaccional
+(Brevo, Mailgun, SMTP2GO, Gmail con contraseña de aplicación) cambiando
+`MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`,
+`MAIL_ENCRYPTION` y `MAIL_FROM_ADDRESS` en `.env`.
+
+Las reservas se guardan igualmente aunque el correo falle; el error queda en el
+log de PHP y se indica en el log con el número de reserva.
+
+---
+
 ## 5. Base de datos
 
 **aaPanel → Databases → Add database**:

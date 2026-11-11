@@ -184,6 +184,42 @@ sudo chmod 640 $RUTA/.env
 
 ---
 
+## 4.1 Correo SMTP (importante en VPS)
+
+El formulario de reservas envía correos **por SMTP** (PHPMailer) usando las
+variables `MAIL_*` del `.env`. En un VPS:
+
+- No hay servidor de correo local: la función `mail()` de PHP no sirve.
+- **Hetzner bloquea el puerto 25** por defecto → usar **587 (tls)** o **465 (ssl)**.
+- El remitente (`MAIL_FROM_ADDRESS`) debe pertenecer al dominio autenticado.
+
+Probar desde la raíz del proyecto:
+
+```bash
+cd /var/www/cabanaslaslengas
+php tools/test_mail.php correo@destino.cl
+```
+
+Muestra la conversación SMTP completa y el error exacto. Si falla:
+
+```bash
+openssl s_client -connect mail.cabanaslaslengas.cl:587 -starttls smtp -crlf
+nc -vz mail.cabanaslaslengas.cl 587
+nc -vz mail.cabanaslaslengas.cl 465
+tail -n 100 /var/log/php/cabanaslaslengas-php-error.log
+```
+
+Errores típicos: credenciales incorrectas, puerto/cifrado equivocado
+(587=tls, 465=ssl), host mal escrito o salida bloqueada. Revisar también SPAM y
+SPF/DKIM del dominio. Alternativa: proveedor transaccional (Brevo, Mailgun,
+SMTP2GO, Gmail con contraseña de aplicación) cambiando las variables `MAIL_*`
+en `.env`.
+
+Las reservas se guardan igualmente aunque el correo falle; el error queda en el
+log de PHP indicando el número de reserva.
+
+---
+
 ## 5. Base de datos
 
 ### 5.1 Crear base y usuario

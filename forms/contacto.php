@@ -1,6 +1,7 @@
 <?php
 // forms/contacto.php
 require_once '../admin/includes/config.php';
+require_once __DIR__ . '/../includes/mailer.php';
 
 // ============================================================
 // RECIBIR DATOS DEL FORMULARIO
@@ -80,14 +81,22 @@ try {
         $client_subject = 'Confirmación de Reserva - Cabañas Las Lengas';
         $client_body = getConfirmationEmailClientEs($data);
     }
-    sendEmail($email, $client_subject, $client_body);
+    $client_mail_ok = sendEmail($email, $client_subject, $client_body);
     
     // ============================================================
     // ENVIAR EMAIL AL ADMIN (SIEMPRE EN ESPAÑOL)
     // ============================================================
     $admin_subject = 'Nueva Reserva - Cabañas Las Lengas';
     $admin_body = getNotificationEmailAdmin($data);
-    sendEmail(env('MAIL_ADMIN_ADDRESS', 'reservaciones@cabanaslaslengas.cl'), $admin_subject, $admin_body);
+    $admin_mail_ok = sendEmail(env('MAIL_ADMIN_ADDRESS', 'reservaciones@cabanaslaslengas.cl'), $admin_subject, $admin_body);
+
+    if (!$client_mail_ok || !$admin_mail_ok) {
+        error_log(
+            'Reserva #' . $reservation_id . ': correo cliente=' . ($client_mail_ok ? 'ok' : 'FALLÓ') .
+            ', correo admin=' . ($admin_mail_ok ? 'ok' : 'FALLÓ') .
+            '. Revisa MAIL_* en .env y prueba con: php tools/test_mail.php correo@destino.cl'
+        );
+    }
     
     // Redirigir según idioma
     $redirect_anchor = $lang == 'en' ? '#contacto' : '#contacto';
@@ -99,18 +108,17 @@ try {
 }
 
 // ============================================================
-// FUNCIÓN PARA ENVIAR EMAIL
+// FUNCIÓN PARA ENVIAR EMAIL (PHPMailer + SMTP del .env)
 // ============================================================
 function sendEmail($to, $subject, $body, $isHTML = true) {
-    $from = env('MAIL_FROM_ADDRESS', 'reservaciones@cabanaslaslengas.cl');
-    $from_name = env('MAIL_FROM_NAME', 'Cabañas Las Lengas');
-    $headers = "From: " . $from_name . " <" . $from . ">\r\n";
-    $headers .= "Reply-To: " . $from . "\r\n";
-    $headers .= "MIME-Version: 1.0\r\n";
-    $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-    $headers .= "X-Mailer: PHP/" . phpversion();
-    
-    return mail($to, $subject, $body, $headers);
+    $error = null;
+    $ok = send_site_mail((string) $to, (string) $subject, (string) $body, null, $error);
+
+    if (!$ok) {
+        error_log('No se pudo enviar correo a ' . $to . ': ' . ($error ?: 'error desconocido'));
+    }
+
+    return $ok;
 }
 
 // ============================================================

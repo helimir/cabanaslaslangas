@@ -1,0 +1,121 @@
+# ============================================================================
+# Cabañas Las Lengas — Nginx + PHP-FPM (VPS Hetzner / Ubuntu)
+# ----------------------------------------------------------------------------
+# Reemplaza al .htaccess de Apache: aquí se replican las protecciones.
+#
+# Instalación:
+#   sudo cp deploy/nginx/cabanaslaslengas.conf.example \
+#            /etc/nginx/sites-available/cabanaslaslengas.conf
+#   sudo ln -s /etc/nginx/sites-available/cabanaslaslengas.conf \
+#              /etc/nginx/sites-enabled/cabanaslaslengas.conf
+#   sudo rm -f /etc/nginx/sites-enabled/default
+#   sudo nginx -t && sudo systemctl reload nginx
+#
+# IMPORTANTE: ajusta server_name, root y la versión del socket de PHP-FPM.
+# Verifícalo con:  ls /run/php/
+# ============================================================================
+
+server {
+    listen 80;
+    listen [::]:80;
+
+    # ------------------------------------------------------------------
+    # Dominio y raíz del proyecto
+    # ------------------------------------------------------------------
+    server_name cabanaslaslengas.cl www.cabanaslaslengas.cl;
+
+    root /var/www/cabanaslaslengas;
+    index index.php index.html;
+
+    charset utf-8;
+    autoindex off;
+
+    # ------------------------------------------------------------------
+    # Subidas (galería de cabañas acepta varias imágenes de hasta 5 MB)
+    # ------------------------------------------------------------------
+    client_max_body_size 60m;
+    client_body_timeout 120s;
+    send_timeout 120s;
+
+    # ------------------------------------------------------------------
+    # Cabeceras de seguridad básicas
+    # ------------------------------------------------------------------
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    # ------------------------------------------------------------------
+    # Equivalente a .htaccess: bloquear archivos y carpetas sensibles
+    # -.env, .git, .dev, .well-known se exceptúa (Certbot)
+    # ------------------------------------------------------------------
+    location ~ /\.(?!well-known) {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+
+    location ~* ^/(error_log|.*\.log|.*\.sql|.*\.bak|.*\.old|.*\.orig|.*\.dmp|composer\.(json|lock)|package(-lock)?\.json|\.env.*)$ {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+
+    # Carpetas internas que no deben servirse por web
+    location ^~ /deploy/     { deny all; }
+    location ^~ /database/   { deny all; }
+    location ^~ /includes/   { deny all; }
+    location ^~ /.git/       { deny all; }
+    location ^~ /.dev/       { deny all; }
+
+    # Los PDF de turismo sí se sirven
+    location ^~ /admin/uploads/pdfs/ {
+        try_files $uri =404;
+    }
+
+    # Nunca ejecutar PHP dentro de las carpetas de imágenes subidas
+    location ~* ^/admin/(assets/uploads|uploads)/.*\.(php|phtml|phar|php[0-9])$ {
+        deny all;
+    }
+
+    # ------------------------------------------------------------------
+    # Archivos estáticos con caché
+    # ------------------------------------------------------------------
+    location ~* \.(jpg|jpeg|png|gif|webp|svg|ico|woff2?|ttf|otf|eot)$ {
+        expires 30d;
+        add_header Cache-Control "public";
+        access_log off;
+        try_files $uri =404;
+    }
+
+    location ~* \.(css|js)$ {
+        expires 7d;
+        access_log off;
+        try_files $uri =404;
+    }
+
+    # ------------------------------------------------------------------
+    # PHP-FPM
+    # ------------------------------------------------------------------
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/run/php/php8.3-fpm.sock;   # <-- ajustar versión
+        fastcgi_read_timeout 120s;
+    }
+
+    # ------------------------------------------------------------------
+    # Front controller / URLs limpias
+    # ------------------------------------------------------------------
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location = /favicon.ico { access_log off; log_not_found off; }
+    location = /robots.txt  { access_log off; log_not_found off; }
+}
+
+# ============================================================================
+# Después de instalar SSL con Certbot:
+#   sudo certbot --nginx -d cabanaslaslengas.cl -d www.cabanaslaslengas.cl
+# Certbot agregará automáticamente el bloque server para el puerto 443 y la
+# redirección desde HTTP. No lo edites a mano.
+# ============================================================================

@@ -1,0 +1,40 @@
+# ============================================================================
+# EJEMPLO de auto-deploy con GitHub Actions (opcional)
+# ----------------------------------------------------------------------------
+# Para activarlo:
+#   1. Copiar este archivo a: .github/workflows/deploy.yml
+#   2. Crear estos Secrets en GitHub (Settings → Secrets and variables → Actions):
+#        SSH_HOST  = IP o dominio del VPS
+#        SSH_USER  = deploy
+#        SSH_KEY   = llave privada SSH del usuario deploy (contenido completo)
+#        SSH_PORT  = 22 (opcional)
+#   3. Hacer commit/push del workflow.
+#
+# Cada push a main hará git pull en el servidor y recargará PHP-FPM.
+# ============================================================================
+
+name: Deploy a VPS
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy por SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            set -e
+            cd /var/www/cabanaslaslengas
+            git pull --ff-only origin main
+            # Ejecutar migraciones nuevas manualmente si corresponde:
+            # sudo mysql laslengas < database/migrations/ARCHIVO.sql
+            sudo systemctl reload php8.3-fpm || true

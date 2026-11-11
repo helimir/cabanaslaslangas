@@ -198,8 +198,8 @@ Las filas incompletas se centran para que no quede una tarjeta aislada a la izqu
 
 ## Seguridad
 
-- `.env`, `error_log` y archivos `.sql`, `.log` están bloqueados por `.htaccess`
-  y excluidos en `.gitignore`.
+- `.env`, `error_log` y archivos `.sql`, `.log` están excluidos en `.gitignore` y
+  bloqueados por `.htaccess` (Apache) y por la configuración de Nginx incluida.
 - Nunca subir `.env` al repositorio. En el servidor se crea manualmente.
 - Cambiar las claves de correo/SMTP si se compartieron en algún momento.
 - El acceso a `/admin/` requiere usuario y contraseña.
@@ -214,6 +214,19 @@ El repositorio ya está inicializado. Para publicarlo en GitHub/GitLab:
 git remote add origin <URL_DEL_REPOSITORIO>
 git push -u origin main
 ```
+
+## Despliegue en producción
+
+La guía completa para VPS (Hetzner / Ubuntu + **Nginx** + PHP-FPM + Certbot),
+conexión del repositorio con el servidor, permisos de escritura, migraciones,
+CSS/caché y respaldos está en **[deploy/DEPLOY.md](deploy/DEPLOY.md)**.
+
+- Config de Nginx: `deploy/nginx/cabanaslaslengas.conf.example`
+- Ajustes PHP-FPM: `deploy/php-fpm/99-cabanas.ini.example`
+- Auto-deploy opcional: `deploy/github-actions-deploy.yml.example`
+
+> Nginx no lee `.htaccess`; las protecciones de `.env`, `.git`, logs y `.sql`
+> se aplican en la configuración de Nginx incluida.
 
 ---
 

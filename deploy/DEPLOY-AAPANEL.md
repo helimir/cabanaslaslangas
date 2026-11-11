@@ -148,7 +148,31 @@ RECAPTCHA_SECRET_KEY=
 
 ---
 
-## 4.1 Correo SMTP (importante en VPS)
+## 4.1 Correo (SendGrid recomendado)
+
+El formulario de reservas envía correos con **PHPMailer**. En Hetzner/VPS se
+recomienda **SendGrid por API HTTPS (puerto 443)**, que no depende de puertos
+SMTP (Hetzner bloquea el 25) ni de un servidor de correo local.
+Guía completa: **[CORREO-SENDGRID.md](CORREO-SENDGRID.md)**.
+
+Configuración mínima en `.env`:
+
+```ini
+MAIL_DRIVER=sendgrid
+SENDGRID_API_KEY=SG.xxxxxxxxxxxxxxxx
+MAIL_FROM_ADDRESS=reservaciones@cabanaslaslengas.cl
+MAIL_FROM_NAME="Cabañas Las Lengas"
+MAIL_ADMIN_ADDRESS=reservaciones@cabanaslaslengas.cl
+```
+
+Probar:
+
+```bash
+cd /www/wwwroot/cabanaslaslengas.cl
+php tools/test_mail.php correo@destino.cl
+```
+
+### Alternativa: SMTP genérico
 
 El formulario de reservas envía correos **por SMTP** (PHPMailer) usando las
 variables `MAIL_*` del `.env`. En un VPS:

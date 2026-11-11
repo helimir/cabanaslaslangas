@@ -30,7 +30,7 @@ if (!function_exists('site_mail_config')) {
     /**
      * Configuración de correo leída desde .env.
      *
-     * @return array{driver:string,host:string,port:int,username:string,password:string,encryption:string,from_address:string,from_name:string,admin_address:string}
+     * @return array{driver:string,host:string,port:int,username:string,password:string,encryption:string,from_address:string,from_name:string,admin_address:string,sendgrid_api_key:string,api_url:string}
      */
     function site_mail_config(): array
     {
@@ -44,7 +44,21 @@ if (!function_exists('site_mail_config')) {
             'from_address' => trim((string) env('MAIL_FROM_ADDRESS', 'reservaciones@cabanaslaslengas.cl')),
             'from_name'    => (string) env('MAIL_FROM_NAME', 'Cabañas Las Lengas'),
             'admin_address' => trim((string) env('MAIL_ADMIN_ADDRESS', 'reservaciones@cabanaslaslengas.cl')),
+            'sendgrid_api_key' => trim((string) env('SENDGRID_API_KEY', '')),
+            'api_url'      => (string) env('SENDGRID_API_URL', 'https://api.sendgrid.com/v3/mail/send'),
         ];
+    }
+
+    /**
+     * Indica si el driver configurado es la API de SendGrid.
+     */
+    function site_mail_is_sendgrid(string $driver = ''): bool
+    {
+        if ($driver === '') {
+            $driver = site_mail_config()['driver'];
+        }
+
+        return in_array(strtolower($driver), ['sendgrid', 'sendgrid_api', 'api'], true);
     }
 
     /**
@@ -58,9 +72,142 @@ if (!function_exists('site_mail_config')) {
             return true;
         }
 
+        if (site_mail_is_sendgrid($config['driver'])) {
+            return $config['sendgrid_api_key'] !== ''
+                && $config['from_address'] !== ''
+                && (bool) filter_var($config['from_address'], FILTER_VALIDATE_EMAIL);
+        }
+
         return $config['host'] !== ''
             && $config['from_address'] !== ''
             && (bool) filter_var($config['from_address'], FILTER_VALIDATE_EMAIL);
+    }
+
+    /**
+     * Envía un correo mediante la API v3 de SendGrid (HTTPS, puerto 443).
+     * No usa puertos SMTP, por lo que funciona aunque el proveedor los bloquee.
+     */
+    function send_sendgrid_api(
+        string $to,
+        string $subject,
+        string $html,
+        ?string $alt_text,
+        ?string &$error,
+        bool $debug,
+        array $config
+    ): bool {
+        $error = null;
+
+        if ($config['sendgrid_api_key'] === '') {
+            $error = 'Falta SENDGRID_API_KEY en .env';
+            error_log('[mail] ' . $error);
+            return false;
+        }
+
+        if (!function_exists('curl_init')) {
+            $error = 'La extensión cURL de PHP no está disponible (necesaria para la API de SendGrid)';
+            error_log('[mail] ' . $error);
+            return false;
+        }
+
+        $payload = [
+            'personalizations' => [
+                [
+                    'to' => [
+                        ['email' => $to],
+                    ],
+                ],
+            ],
+            'from' => [
+                'email' => $config['from_address'],
+                'name'  => $config['from_name'],
+            ],
+            'reply_to' => [
+                'email' => $config['from_address'],
+                'name'  => $config['from_name'],
+            ],
+            'subject' => $subject,
+            'content' => [
+                [
+                    'type'  => 'text/plain',
+                    'value' => $alt_text !== null && $alt_text !== '' ? $alt_text : strip_tags($html),
+                ],
+                [
+                    'type'  => 'text/html',
+                    'value' => $html,
+                ],
+            ],
+        ];
+
+        $json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        if ($json === false) {
+            $error = 'No se pudo generar el JSON para SendGrid';
+            error_log('[mail] ' . $error);
+            return false;
+        }
+
+        $ch = curl_init($config['api_url']);
+
+        curl_setopt_array($ch, [
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => $json,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CONNECTTIMEOUT => 10,
+            CURLOPT_TIMEOUT        => 25,
+            CURLOPT_HTTPHEADER     => [
+                'Authorization: Bearer ' . $config['sendgrid_api_key'],
+                'Content-Type: application/json',
+                'Accept: application/json',
+            ],
+            CURLOPT_USERAGENT      => 'CabanasLasLengas/1.0',
+        ]);
+
+        $response = curl_exec($ch);
+        $http_code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curl_error = curl_error($ch);
+        curl_close($ch);
+
+        if ($response === false || $curl_error !== '') {
+            $error = 'Error de conexión con SendGrid: ' . ($curl_error !== '' ? $curl_error : 'sin respuesta');
+            error_log('[mail] ' . $error);
+            return false;
+        }
+
+        if ($debug) {
+            echo 'SendGrid API -> HTTP ' . $http_code . PHP_EOL;
+            if ($response !== '') {
+                echo 'Respuesta: ' . substr((string) $response, 0, 800) . PHP_EOL;
+            }
+        }
+
+        if ($http_code === 202 || $http_code === 200) {
+            return true;
+        }
+
+        // Extraer el mensaje de error que devuelve SendGrid.
+        $detalle = '';
+        $decoded = json_decode((string) $response, true);
+        if (is_array($decoded) && !empty($decoded['errors'])) {
+            $partes = [];
+            foreach ($decoded['errors'] as $item) {
+                if (is_array($item) && isset($item['message'])) {
+                    $partes[] = (string) $item['message'];
+                } else {
+                    $partes[] = (string) json_encode($item);
+                }
+            }
+            $detalle = implode(' | ', $partes);
+        }
+
+        if ($detalle === '') {
+            $detalle = substr((string) $response, 0, 500);
+        }
+
+        $error = 'SendGrid HTTP ' . $http_code . ': ' . $detalle;
+        error_log('[mail] Error al enviar a ' . $to . ': ' . $error);
+
+        return false;
     }
 
     /**
@@ -88,6 +235,21 @@ if (!function_exists('site_mail_config')) {
             $error = 'Destinatario inválido: ' . $to;
             error_log('[mail] ' . $error);
             return false;
+        }
+
+        // ------------------------------------------------------------
+        // Modo SendGrid API (recomendado en VPS/Hetzner: HTTPS puerto 443)
+        // ------------------------------------------------------------
+        if (site_mail_is_sendgrid($config['driver'])) {
+            return send_sendgrid_api(
+                $to,
+                $subject,
+                $html,
+                ($alt_text !== null && $alt_text !== '') ? $alt_text : null,
+                $error,
+                $debug,
+                $config
+            );
         }
 
         // ------------------------------------------------------------

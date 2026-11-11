@@ -851,9 +851,9 @@ include 'includes/sidebar.php';
                             <div class="accordion-body small">
                                 <ul class="mb-0">
                                     <li>Revisa la carpeta de spam del correo destino.</li>
-                                    <li>La configuración SMTP está en el archivo <code>.env</code> (host, usuario, clave).</li>
-                                    <li>Algunos hostings bloquean el envío de correo; soporte puede configurar SMTP autenticado.</li>
-                                    <li>Las reservas igual quedan guardadas en el admin aunque el correo falle.</li>
+                                    <li>El envío usa el proveedor configurado en el servidor (SendGrid o SMTP).</li>
+                                    <li>Las reservas quedan guardadas en el admin aunque el correo falle.</li>
+                                    <li>Si el problema persiste, avisa a soporte indicando el correo del cliente y la fecha de la reserva; pueden probar el envío por separado.</li>
                                 </ul>
                             </div>
                         </div>

@@ -224,6 +224,7 @@ CSS/caché y respaldos está en **[deploy/DEPLOY.md](deploy/DEPLOY.md)**.
 - Config de Nginx: `deploy/nginx/cabanaslaslengas.conf.example`
 - Ajustes PHP-FPM: `deploy/php-fpm/99-cabanas.ini.example`
 - Auto-deploy opcional: `deploy/github-actions-deploy.yml.example`
+- **Correo con SendGrid (recomendado en VPS):** `deploy/CORREO-SENDGRID.md`
 
 ### Si usas aaPanel
 
